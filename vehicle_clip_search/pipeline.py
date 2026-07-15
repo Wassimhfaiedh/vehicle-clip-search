@@ -1,7 +1,5 @@
 """Headless vehicle detection pipeline: YOLO detection + ByteTrack tracking +
-line-crossing + Nemotron VLM analysis + CLIP embedding + ChromaDB storage.
-Called synchronously from the Gradio app, once per "Process" click, and
-returns the list of logged vehicles."""
+line-crossing + Nemotron VLM analysis + CLIP embedding + ChromaDB storage."""
 
 import base64
 import json

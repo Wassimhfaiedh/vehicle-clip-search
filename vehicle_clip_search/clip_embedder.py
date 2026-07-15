@@ -1,4 +1,4 @@
-"""Local CLIP embeddings (open_clip, ViT-B-32). No API key needed."""
+"""Local CLIP embeddings (open_clip, ViT-B-32)."""
 
 import torch
 import open_clip
