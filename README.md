@@ -1,44 +1,50 @@
 # Tunisian Vehicle Search Using VLMs and CLIP
 
+Vehicle surveillance pipeline: YOLOv8 detection, ByteTrack tracking, line-crossing
+counting, NVIDIA Nemotron VLM for brand/color/plate reading, CLIP embeddings, and
+ChromaDB semantic search — all in one Gradio app.
 
+## Structure
 
-This project uses object detection (YOLO) and a vision-language model (VLM)
-to detect vehicles and read their license plates exactly as printed —
-including Tunisian-style plates (digits + "TN" + digits). Every detected
-vehicle is also embedded with CLIP, so you can search your logged vehicles
-using natural language ("silver peugeot") or by uploading a photo of a car
-or a license plate.
+```
+app.py                          # Gradio UI (process video + semantic search)
+vehicle_clip_search/
+  config.py                     # settings, loaded from .env
+  pipeline.py                   # detection + tracking + VLM + storage
+  clip_embedder.py               # open_clip image/text embeddings
+  vector_store.py                # ChromaDB read/write
+requirements.txt
+.env.example
+```
 
 ## Setup
 
-1. Put these two files in the same folder as `app.py`:
-   - `license_plate_detector.pt`
-   - `yolov8s.pt`
-2. `pip install -r requirements.txt`
-3. `python app.py`
-4. Open `http://localhost:7860`
+```bash
+git clone <your-repo-url>
+cd vehicle-clip-search
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env   # then fill in NVIDIA_API_KEY
+```
 
-## Flow (3 tabs)
+Place your model weights (`yolov8s.pt`, `license_plate_detector.pt`) in the project
+root, or point `VEHICLE_MODEL_PATH` / `PLATE_MODEL_PATH` in `.env` to their location.
 
-1. **Setup & crossing line** — upload the video, paste your NVIDIA NeMoVision
-   API key, click "Load first frame", then click 2 points on the image to
-   draw the crossing line (click a 3rd time to restart the line).
-2. **Process video** — click "Process video". A progress bar tracks the
-   frames as vehicles crossing the line get cropped, sent to NeMoVision for
-   brand/color/plate reading, and embedded with local CLIP into ChromaDB.
-   When done, the annotated output video and the results table appear.
-3. **Semantic search** — search by text ("silver peugeot") or upload a car
-   or plate photo. Matches show as a numbered gallery — click any result to
-   see its full details (brand, color, plate, enter/exit time). A details
-   table and a 2D embedding map (matches highlighted in red) are also shown.
+## Run
+
+```bash
+python app.py
+```
+
+Opens at `http://127.0.0.1:7860`.
+
+1. **Process Video tab** — upload a video, click two points on the frame to set the
+   crossing line, enter your Nemotron API key, click Process.
+2. **Semantic Search tab** — search by text ("silver peugeot") or by uploading a
+   car/plate photo.
 
 ## Notes
 
-- The API key field is left empty on purpose — **the key that was hardcoded
-  in the original script was exposed in shared code and should be revoked
-  in the NVIDIA console**, then a fresh key pasted into the app each session
-  (or set as an env var yourself if you'd rather not paste it each time).
-- Captures are saved under `captures/<run_id>_id_<vehicle_id>/`, so runs
-  from different videos don't collide.
-- ChromaDB data persists in `vehicle_search_chroma/` between runs, so
-  vehicles logged in past sessions stay searchable.
+- Get an NVIDIA API key at https://build.nvidia.com.
+- `captures/` and `vehicle_search_chroma/` are created at runtime and are gitignored.
+- Never commit `.env` or model weights with embedded keys.
