@@ -1,5 +1,7 @@
 """Headless vehicle detection pipeline: YOLO detection + ByteTrack tracking +
-line-crossing + Nemotron VLM analysis + CLIP embedding + ChromaDB storage."""
+line-crossing + Nemotron VLM analysis + CLIP embedding + ChromaDB storage.
+Called synchronously from the Gradio app, once per "Process" click, and
+returns the list of logged vehicles."""
 
 import base64
 import json
@@ -114,13 +116,15 @@ def _iou(a, b):
     return inter / float((ax2 - ax1) * (ay2 - ay1) + (bx2 - bx1) * (by2 - by1) - inter)
 
 
-def _find_best_match(ref_box, candidates):
+def _find_best_match(ref_box, candidates, exclude=frozenset()):
     if not candidates:
         return None
     rx1, ry1, rx2, ry2 = ref_box
     rcx, rcy = (rx1 + rx2) / 2, (ry1 + ry2) / 2
     best_idx, best_score = None, 0.0
     for idx, cb in enumerate(candidates):
+        if idx in exclude:
+            continue
         cx1, cy1, cx2, cy2 = cb
         score = _iou(ref_box, cb)
         if cx1 <= rcx <= cx2 and cy1 <= rcy <= cy2:
@@ -228,6 +232,7 @@ def process_video(video_path: str, line_p1, line_p2, api_key: str, progress_cb=N
 
     frame_count = 0
     prev_side, pending, already_sent = {}, {}, set()
+    finalized_plate_ids = set()
     in_count = out_count = 0
     records = []
 
@@ -276,6 +281,7 @@ def process_video(video_path: str, line_p1, line_p2, api_key: str, progress_cb=N
                 if side != 0:
                     prev_side[tid] = side
 
+        used_plate_indices = set()
         for tid in list(pending.keys()):
             if tid in already_sent:
                 pending.pop(tid, None)
@@ -287,22 +293,29 @@ def process_video(video_path: str, line_p1, line_p2, api_key: str, progress_cb=N
 
             matched = False
             if vidx is not None and plate_boxes:
-                pidx = _find_best_match(vehicle_boxes[vidx], plate_boxes)
+                pidx = _find_best_match(vehicle_boxes[vidx], plate_boxes, exclude=used_plate_indices)
                 if pidx is not None:
                     conf = float(plate_detections.confidence[pidx]) if plate_detections.confidence is not None else 0.0
                     if conf >= PLATE_VLM_CONF_THRESHOLD:
-                        plate_crop = _safe_crop(frame, plate_boxes[pidx], CROP_MARGIN)
-                        car_crop = _safe_crop(frame, vehicle_boxes[vidx], CROP_MARGIN)
-                        if plate_crop is not None and car_crop is not None:
-                            plate_tid = (int(plate_detections.tracker_id[pidx])
-                                         if plate_detections.tracker_id is not None else tid)
-                            record = _finalize_vehicle(
-                                car_crop, plate_crop, plate_tid, time_str,
-                                pending[tid]["direction"], in_count, out_count, api_key,
-                            )
-                            records.append(record)
+                        plate_tid = (int(plate_detections.tracker_id[pidx])
+                                     if plate_detections.tracker_id is not None else tid)
+                        if plate_tid in finalized_plate_ids:
+                            used_plate_indices.add(pidx)
                             already_sent.add(tid)
                             matched = True
+                        else:
+                            plate_crop = _safe_crop(frame, plate_boxes[pidx], CROP_MARGIN)
+                            car_crop = _safe_crop(frame, vehicle_boxes[vidx], CROP_MARGIN)
+                            if plate_crop is not None and car_crop is not None:
+                                record = _finalize_vehicle(
+                                    car_crop, plate_crop, plate_tid, time_str,
+                                    pending[tid]["direction"], in_count, out_count, api_key,
+                                )
+                                records.append(record)
+                                already_sent.add(tid)
+                                finalized_plate_ids.add(plate_tid)
+                                used_plate_indices.add(pidx)
+                                matched = True
 
             if matched:
                 pending.pop(tid, None)
