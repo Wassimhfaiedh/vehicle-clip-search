@@ -1,22 +1,3 @@
-"""
-All-in-one Gradio app for the vehicle detection + semantic search pipeline.
-
-Replaces the old two-script workflow (vehicle_detection_with_clip.py with an
-OpenCV desktop window, then a separate search_app.py) with a single Gradio
-app that walks the user through:
-
-  1. Upload a video + paste their NVIDIA NeMoVision API key
-  2. Click 2 points on the first frame to draw the crossing line
-  3. Click "Process video" -> vehicles get detected, tracked, cropped, sent
-     to NeMoVision for brand/color/plate reading, embedded with local CLIP,
-     and stored in ChromaDB. Results stream into a table live.
-  4. Switch to the "Semantic search" tab to search by text or by uploading a
-     car/plate photo, with a 2D embedding map (matches highlighted in red).
-
-Run with:  python app.py
-Requires license_plate_detector.pt and yolov8s.pt in the working directory.
-"""
-
 import os
 import cv2
 import json
