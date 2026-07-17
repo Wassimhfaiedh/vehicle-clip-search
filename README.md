@@ -1,6 +1,5 @@
 # Tunisian Vehicle Search Using VLMs and CLIP
 
-_Developed by Wassim Hfaiedh_
 
 Everything is one app: `app.py`. No more running two separate scripts.
 
