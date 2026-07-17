@@ -1,5 +1,15 @@
 # Tunisian Vehicle Search Using VLMs and CLIP
 
+_Developed by Wassim Hfaiedh_
+
+This project uses object detection (YOLO) and a vision-language model (VLM)
+to detect vehicles and read their license plates exactly as printed —
+including Tunisian-style plates (digits + "TN" + digits). Every detected
+vehicle is also embedded with CLIP, so you can search your logged vehicles
+using natural language ("silver peugeot") or by uploading a photo of a car
+or a license plate.
+
+Everything is one app: `app.py`. No more running two separate scripts.
 
 ## Setup
 
