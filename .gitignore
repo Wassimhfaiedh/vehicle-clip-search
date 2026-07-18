@@ -1,8 +1,0 @@
-.env
-__pycache__/
-*.pyc
-*.pt
-captures/
-vehicle_search_chroma/
-venv/
-.venv/
