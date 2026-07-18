@@ -45,17 +45,15 @@ vehicle_clip_search/
   clip_embedder.py               # open_clip image/text embeddings
   vector_store.py                # ChromaDB read/write
 requirements.txt
-.env.example
 ```
 
 ## Setup
 
 ```bash
-git clone <your-repo-url>
-cd vehicle-clip-search
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+git clone https://github.com/Wassimhfaiedh/TunisianVehicleSearch.git
+cd TunisianVehicleSearch
+python -m venv .venv && source .venv/bin/activate   
 pip install -r requirements.txt
-cp .env.example .env   # then fill in NVIDIA_API_KEY
 ```
 
 Place your model weights (`yolov8s.pt`, `license_plate_detector.pt`) in the project
